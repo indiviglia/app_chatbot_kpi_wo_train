@@ -35,14 +35,14 @@ def display_logo(location="main"):
             with col1:
                 st.image(logo, width=100)
             with col2:
-                st.title("Análisis de Producción Farmacéutica")
+                st.title("Análisis de Producción Farmacéutica [SIN ENTRENAMIENTO]")
             return True
     return False
 
 
 if not display_logo("header"):
     # Si no hay logo, mostrar título normal
-    st.title("Análisis de Producción Farmacéutica")
+    st.title("Análisis de Producción Farmacéutica [SIN ENTRENAMIENTO]")
 st.markdown("---")
 
 # OpenAI Client
