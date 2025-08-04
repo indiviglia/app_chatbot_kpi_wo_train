@@ -55,11 +55,6 @@ def init_openai_client():
     )
 
 # Load Data
-import os
-import pandas as pd
-import csv
-from pathlib import Path
-
 @st.cache_data
 def load_data():
     # 0) Carpeta “artifacts” relativa a este script
@@ -77,8 +72,8 @@ def load_data():
         raw_header = f.readline().strip()
     st.write("📋 Header crudo:", raw_header)
 
-    # 3) Detectar delimitador con csv.Sniffer
-    sample = raw_header + "\n" + f.readline()
+    # 3) Detectar delimitador
+    sample = raw_header + "\n" + second_line
     dialect = csv.Sniffer().sniff(sample)
     delim = dialect.delimiter
     st.write(f"🔍 Delimitador detectado: '{delim}'")
@@ -86,11 +81,6 @@ def load_data():
     # 4) Cargar DataFrame con el delimitador correcto
     df = pd.read_csv(csv_file, sep=delim)
     st.write("🐼 Columnas cargadas:", df.columns.tolist())
-
-    # 5) Si no cargó columnas, abortar
-    if df.shape[1] == 0:
-        st.error("❌ El CSV se cargó pero no se detectaron columnas. Chequeá el header.")
-        return {}, ""
 
     # 6) Parsear fechas y calcular campos extra
     df["order_process_start_dt"] = pd.to_datetime(df["order_process_start_dt"])
