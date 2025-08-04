@@ -2,6 +2,7 @@ import streamlit as st
 import os
 import json
 import openai
+import pandas as pd
 from pathlib import Path
 from PIL import Image
 
@@ -57,13 +58,29 @@ def init_openai_client():
 @st.cache_data
 def load_data():
     ART = Path("artifacts")
-    payloads = {}
     
-    for p in ART.glob("payload_*_full2.json"):
-        year = p.stem.split("_")[1]
-        with open(p, 'r', encoding='utf-8') as f:
-            payloads[year] = json.loads(f.read())[year]
+    # 1) Leer el CSV y parsear fechas
+    df = pd.read_csv(ART / "master_table_fixed3.csv", delimiter=';')
+    df["order_process_start_dt"] = pd.to_datetime(df["order_process_start_dt"])
     
+    # 2) Calcular campos adicionales
+    df["year"]   = df["order_process_start_dt"].dt.year
+    df["period"] = df["order_process_start_dt"].dt.to_period("M")
+    df = df.sort_values("period")
+    df["lag1"]   = df["volumen_final"].shift(1)
+    df["lag2"]   = df["volumen_final"].shift(2)
+    df["ma3"]    = df["volumen_final"].rolling(3).mean()
+    df["month"]  = df["period"].dt.month
+    df["quarter"]= df["period"].dt.quarter
+    df["fase_new"]= (df["year"] >= 2023).astype(int)
+    
+    # 3) Construir payloads por año
+    payloads = {
+        str(yr): df[df["year"] == yr].to_dict(orient="records")
+        for yr in sorted(df["year"].unique())
+    }
+    
+    # 4) Leer preprompt (igual que antes)
     with open(ART / "preprompt2.txt", 'r', encoding='utf-8') as f:
         preprompt = f.read()
     
