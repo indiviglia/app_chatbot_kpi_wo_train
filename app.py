@@ -57,12 +57,32 @@ def init_openai_client():
 # Load Data
 @st.cache_data
 def load_data():
+    # 0. Definí bien la carpeta “artifacts” relativa a este script
+    ART = Path(__file__).parent / "artifacts"
     
-    # 1) Leer el CSV y parsear fechas
-    df = pd.read_csv("artifacts/master_table_fixed3.csv", sep=';')
+    # Debug: lista lo que hay en artifacts
+    st.write("🗂️ Archivos en artifacts:", os.listdir(ART))
+    
+    # 1. Ruta al CSV
+    csv_file = ART / "master_table_fixed3.csv"
+    if not csv_file.exists():
+        st.error(f"❌ No encontré el CSV en {csv_file}")
+        return {}, ""
+    
+    # 2. Leelo con separador ;
+    df = pd.read_csv(csv_file, sep=";")
+    
+    # Debug: primeras líneas y columnas
+    st.write("🐼 Preview CSV:", df.head(3))
+    st.write("🔑 Columnas detectadas:", df.columns.tolist())
+    
+    # 3. Si llegó vacío o sin columnas, abortá
+    if df.shape[1] == 0:
+        st.error("❌ El CSV se leyó pero no tiene columnas. Revisá el header.")
+        return {}, ""
+    
+    # 4. Parseo de fecha y cálculos
     df["order_process_start_dt"] = pd.to_datetime(df["order_process_start_dt"])
-    
-    # 2) Calcular campos adicionales
     df["year"]   = df["order_process_start_dt"].dt.year
     df["period"] = df["order_process_start_dt"].dt.to_period("M")
     df = df.sort_values("period")
@@ -73,15 +93,18 @@ def load_data():
     df["quarter"]= df["period"].dt.quarter
     df["fase_new"]= (df["year"] >= 2023).astype(int)
     
-    # 3) Construir payloads por año
+    # 5. Payloads por año
     payloads = {
         str(yr): df[df["year"] == yr].to_dict(orient="records")
         for yr in sorted(df["year"].unique())
     }
     
-    # 4) Leer preprompt (igual que antes)
-    with open(ART / "preprompt2.txt", 'r', encoding='utf-8') as f:
-        preprompt = f.read()
+    # 6. Leer preprompt
+    preprompt_file = ART / "preprompt2.txt"
+    if not preprompt_file.exists():
+        st.error(f"❌ No encontré preprompt2.txt en {preprompt_file}")
+        return payloads, ""
+    preprompt = preprompt_file.read_text(encoding="utf-8")
     
     return payloads, preprompt
 
