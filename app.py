@@ -55,58 +55,70 @@ def init_openai_client():
     )
 
 # Load Data
+import os
+import pandas as pd
+import csv
+from pathlib import Path
+
 @st.cache_data
 def load_data():
-    # 0. Definí bien la carpeta “artifacts” relativa a este script
+    # 0) Carpeta “artifacts” relativa a este script
     ART = Path(__file__).parent / "artifacts"
-    
-    # Debug: lista lo que hay en artifacts
-    st.write("🗂️ Archivos en artifacts:", os.listdir(ART))
-    
-    # 1. Ruta al CSV
+
+    # 1) Listar y confirmar que el CSV está ahí
+    st.write("🗂 Archivos en artifacts:", os.listdir(ART))
     csv_file = ART / "master_table_fixed3.csv"
     if not csv_file.exists():
-        st.error(f"❌ No encontré el CSV en {csv_file}")
+        st.error(f"❌ No encontré master_table_fixed3.csv en {csv_file}")
         return {}, ""
-    
-    # 2. Leelo con separador ;
-    df = pd.read_csv(csv_file, sep=";")
-    
-    # Debug: primeras líneas y columnas
-    st.write("🐼 Preview CSV:", df.head(3))
-    st.write("🔑 Columnas detectadas:", df.columns.tolist())
-    
-    # 3. Si llegó vacío o sin columnas, abortá
+
+    # 2) Leer la primera línea para ver el header “raw”
+    with open(csv_file, "r", encoding="utf-8") as f:
+        raw_header = f.readline().strip()
+    st.write("📋 Header crudo:", raw_header)
+
+    # 3) Detectar delimitador con csv.Sniffer
+    sample = raw_header + "\n" + f.readline()
+    dialect = csv.Sniffer().sniff(sample)
+    delim = dialect.delimiter
+    st.write(f"🔍 Delimitador detectado: '{delim}'")
+
+    # 4) Cargar DataFrame con el delimitador correcto
+    df = pd.read_csv(csv_file, sep=delim)
+    st.write("🐼 Columnas cargadas:", df.columns.tolist())
+
+    # 5) Si no cargó columnas, abortar
     if df.shape[1] == 0:
-        st.error("❌ El CSV se leyó pero no tiene columnas. Revisá el header.")
+        st.error("❌ El CSV se cargó pero no se detectaron columnas. Chequeá el header.")
         return {}, ""
-    
-    # 4. Parseo de fecha y cálculos
+
+    # 6) Parsear fechas y calcular campos extra
     df["order_process_start_dt"] = pd.to_datetime(df["order_process_start_dt"])
-    df["year"]   = df["order_process_start_dt"].dt.year
-    df["period"] = df["order_process_start_dt"].dt.to_period("M")
+    df["year"]    = df["order_process_start_dt"].dt.year
+    df["period"]  = df["order_process_start_dt"].dt.to_period("M")
     df = df.sort_values("period")
-    df["lag1"]   = df["volumen_final"].shift(1)
-    df["lag2"]   = df["volumen_final"].shift(2)
-    df["ma3"]    = df["volumen_final"].rolling(3).mean()
-    df["month"]  = df["period"].dt.month
-    df["quarter"]= df["period"].dt.quarter
+    df["lag1"]    = df["volumen_final"].shift(1)
+    df["lag2"]    = df["volumen_final"].shift(2)
+    df["ma3"]     = df["volumen_final"].rolling(3).mean()
+    df["month"]   = df["period"].dt.month
+    df["quarter"] = df["period"].dt.quarter
     df["fase_new"]= (df["year"] >= 2023).astype(int)
-    
-    # 5. Payloads por año
+
+    # 7) Armar payloads por año
     payloads = {
         str(yr): df[df["year"] == yr].to_dict(orient="records")
         for yr in sorted(df["year"].unique())
     }
-    
-    # 6. Leer preprompt
+
+    # 8) Leer tu preprompt
     preprompt_file = ART / "preprompt2.txt"
     if not preprompt_file.exists():
         st.error(f"❌ No encontré preprompt2.txt en {preprompt_file}")
         return payloads, ""
     preprompt = preprompt_file.read_text(encoding="utf-8")
-    
+
     return payloads, preprompt
+
 
 # askllm3 modificada para mantener contexto
 def ask_llm3_with_context(question: str, conversation_history: list, years=None):
