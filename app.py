@@ -57,10 +57,9 @@ def init_openai_client():
 # Load Data
 @st.cache_data
 def load_data():
-    ART = Path("artifacts")
     
     # 1) Leer el CSV y parsear fechas
-    df = pd.read_csv(ART / "master_table_fixed3.csv", delimiter=';')
+    df = pd.read_csv("artifacts/master_table_fixed3.csv", sep=';')
     df["order_process_start_dt"] = pd.to_datetime(df["order_process_start_dt"])
     
     # 2) Calcular campos adicionales
