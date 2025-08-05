@@ -66,13 +66,7 @@ def load_data():
     # 3) Leer CSV y parsear fecha
     df = pd.read_csv(csv_file, sep=";")
     df["order_process_start_dt"] = pd.to_datetime(df["order_process_start_dt"])
-    
-     try:
-        df = pd.read_csv(csv_file, sep=";")
-    except pd.errors.EmptyDataError:
-        st.error("❌ El CSV está vacío o malformado.")
-        return {}, ""
-        
+            
     # 4) Calcular campos
     df["year"]   = df["order_process_start_dt"].dt.year
     df["period"] = df["order_process_start_dt"].dt.to_period("M")
