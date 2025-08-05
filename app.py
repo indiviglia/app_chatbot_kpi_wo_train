@@ -56,11 +56,8 @@ def init_openai_client():
 
 # Load Data
 @st.cache_data
-
-@st.cache_data
 def load_data():
     ART = Path("artifacts")
-    payloads = {}
     
    # Lee el CSV y devuelve el DataFrame
     df = pd.read_csv("artifacts/master_table_fixed3.csv")
@@ -74,12 +71,7 @@ st.text(f"DEBUG: listo load data")
 def ask_llm3_with_context(question: str, conversation_history: list, years=None):
     client = init_openai_client()
     df, preprompt = load_data()
-    
-    if years is None:
-        years = list(payloads.keys())
-    
-    payload_multi = {yr: payloads[yr] for yr in years if yr in payloads}
-    
+        
     # system_msg = preprompt + "\n\nDATOS (JSON por año):\n" + json.dumps(payload_multi, ensure_ascii=False, indent=2)
     # Armar el mensaje de sistema con preprompt + csv
     system_msg = (
