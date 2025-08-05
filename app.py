@@ -56,12 +56,20 @@ def init_openai_client():
 
 # Load Data
 @st.cache_data
+
+CSV = "master_table_fixed3.csv"
+PARQ = "master_volume.parquet"
+
+df = pd.read_csv(CSV, sep=";", dtype="string")
+df.to_parquet(PARQ, index=False)
+print("✅ master_volume.parquet guardado:", Path(PARQ).stat().st_size/1e6, "MB")
+
 def load_data():
     ART = Path("artifacts")
     
    # Lee el CSV y devuelve el DataFrame
-    df = pd.read_csv("artifacts/master_table_fixed3.csv")
-    
+ #   df = pd.read_csv("artifacts/master_table_fixed3.csv")
+    df = pd.read_parquet("master_volume.parquet")
     with open(ART / "preprompt2.txt", 'r', encoding='utf-8') as f:
         preprompt = f.read()
     
