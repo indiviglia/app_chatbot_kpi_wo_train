@@ -66,7 +66,13 @@ def load_data():
     # 3) Leer CSV y parsear fecha
     df = pd.read_csv(csv_file, sep=";")
     df["order_process_start_dt"] = pd.to_datetime(df["order_process_start_dt"])
-
+    
+     try:
+        df = pd.read_csv(csv_file, sep=";")
+    except pd.errors.EmptyDataError:
+        st.error("❌ El CSV está vacío o malformado.")
+        return {}, ""
+        
     # 4) Calcular campos
     df["year"]   = df["order_process_start_dt"].dt.year
     df["period"] = df["order_process_start_dt"].dt.to_period("M")
@@ -132,11 +138,3 @@ if prompt := st.chat_input("Haz una pregunta sobre los datos..."):
             except Exception as e:
                 st.error(f"Error: {e}")
 
-# Sidebar
-with st.sidebar:
-    display_logo("sidebar")
-    st.header("Información")
-    st.markdown(f"- 📅 Años disponibles: {', '.join(load_data()[0].keys())}")
-    if st.button("🗑️ Limpiar conversación"):
-        st.session_state.clear()
-        st.experimental_rerun()
