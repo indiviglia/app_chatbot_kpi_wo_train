@@ -6,6 +6,14 @@ import pandas as pd
 from pathlib import Path
 from PIL import Image
 
+CSV = "master_table_fixed3.csv"
+PARQ = "master_volume.parquet"
+
+df = pd.read_csv(CSV, sep=";", dtype="string")
+df.to_parquet(PARQ, index=False)
+print("✅ master_volume.parquet guardado:", Path(PARQ).stat().st_size/1e6, "MB")
+
+
 # Configuración de la página
 st.set_page_config(
     page_title="Análisis de Producción Farmacéutica",
@@ -56,13 +64,6 @@ def init_openai_client():
 
 # Load Data
 @st.cache_data
-
-CSV = "master_table_fixed3.csv"
-PARQ = "master_volume.parquet"
-
-df = pd.read_csv(CSV, sep=";", dtype="string")
-df.to_parquet(PARQ, index=False)
-print("✅ master_volume.parquet guardado:", Path(PARQ).stat().st_size/1e6, "MB")
 
 def load_data():
     ART = Path("artifacts")
