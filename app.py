@@ -11,7 +11,7 @@ st.set_page_config(
     page_title="Análisis de Producción Farmacéutica [SIN ENTRENAMIENTO]",
     layout="wide"
 )
-
+print("im starting")
 # Función para cargar y mostrar el logo
 def display_logo(location="main"):
     logo_path = Path("assets/logo.png")
@@ -45,7 +45,7 @@ def init_openai_client():
         azure_endpoint=st.secrets["AZURE_OPENAI_ENDPOINT"],
         api_version=st.secrets["AZURE_OPENAI_API_VERSION"],
     )
-
+print("im loading data")
 # Load Data
 @st.cache_data
 def load_data():
@@ -87,7 +87,7 @@ def load_data():
     # 6) Leer preprompt
     preprompt = prompt_file.read_text(encoding="utf-8")
     return payloads, preprompt
-
+print("i finished load dattaaaa")
 # Función para llamar al LLM con contexto
 def ask_llm3_with_context(question: str, history: list, years=None):
     client = init_openai_client()
