@@ -6,14 +6,7 @@ import pandas as pd
 from pathlib import Path
 from PIL import Image
 
-CSV = "master_table_fixed3.csv"
-PARQ = "master_volume.parquet"
 
-# 1. Solo convierte el CSV a Parquet si aún no existe
-if not Path(PARQ).exists():
-    df_csv = pd.read_csv(CSV, sep=";", dtype="string")
-    df_csv.to_parquet(PARQ, index=False)
-    print("✅ master_volume.parquet guardado:", Path(PARQ).stat().st_size/1e6, "MB")
 
 # Configuración de la página
 st.set_page_config(
@@ -59,18 +52,21 @@ def init_openai_client():
 @st.cache_data
 def load_data():
     ART = Path("artifacts")
-    df = pd.read_parquet(PARQ)
+
+     # Lee el CSV y devuelve el DataFrame
+    df = pd.read_csv("artifacts/master_table_fixed3.csv")
     with open(ART / "preprompt2.txt", 'r', encoding='utf-8') as f:
         preprompt = f.read()
+
     return df, preprompt
-
-st.text(f"DEBUG: listo load data")
-
+    
+# askllm3 modificada para mantener contexto
 def ask_llm3_with_context(question: str, conversation_history: list, years=None):
     client = init_openai_client()
     df, preprompt = load_data()
     if years is not None:
         df = df[df["year"].astype(str).isin([str(y) for y in years])]
+
     system_msg = (
         preprompt
         + "\n\nUsa estos datos tabulares en CSV:\n"
